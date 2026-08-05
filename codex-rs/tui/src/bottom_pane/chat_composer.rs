@@ -181,6 +181,7 @@ use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 use crossterm::event::KeyModifiers;
 use ratatui::buffer::Buffer;
+use ratatui::layout::Alignment;
 use ratatui::layout::Constraint;
 use ratatui::layout::Layout;
 use ratatui::layout::Margin;
@@ -470,6 +471,7 @@ pub(crate) struct ChatComposer {
     effort_observed: bool,
     attachments: AttachmentState,
     placeholder_text: String,
+    thread_name: Option<String>,
     blocks_direct_input: bool,
     is_task_running: bool,
     queue_submissions: bool,
@@ -656,6 +658,7 @@ impl ChatComposer {
             effort_observed: false,
             attachments: AttachmentState::default(),
             placeholder_text,
+            thread_name: None,
             blocks_direct_input: false,
             is_task_running: false,
             queue_submissions: false,
@@ -1029,6 +1032,14 @@ impl ChatComposer {
         entry_count: usize,
     ) {
         self.history.set_metadata(thread_id, log_id, entry_count);
+    }
+
+    pub(crate) fn set_thread_name(&mut self, thread_name: Option<String>) -> bool {
+        if self.thread_name == thread_name {
+            return false;
+        }
+        self.thread_name = thread_name;
+        true
     }
 
     /// Integrate an asynchronous response to an on-demand history lookup.
@@ -4736,6 +4747,26 @@ impl ChatComposer {
         }
         let style = user_message_style();
         Block::default().style(style).render(composer_rect, buf);
+        if let Some(thread_name) = self
+            .thread_name
+            .as_deref()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+        {
+            let title_area = Rect {
+                x: composer_rect.x,
+                y: composer_rect.y,
+                width: composer_rect.width.saturating_sub(1),
+                height: 1,
+            };
+            let title = Line::from(vec!["Session: ".dim(), thread_name.to_string().dim()]);
+            Paragraph::new(truncate_line_with_ellipsis_if_overflow(
+                title,
+                title_area.width.into(),
+            ))
+            .alignment(Alignment::Right)
+            .render(title_area, buf);
+        }
         if !remote_images_rect.is_empty() {
             Paragraph::new(self.attachments.remote_image_lines())
                 .style(style)
