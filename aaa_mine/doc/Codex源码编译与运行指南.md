@@ -71,16 +71,18 @@ cargo install --locked cargo-nextest
 cd /Users/shtexaizengbobo/dev/ai_agent/codex/codex-rs
 ```
 
-只构建 CLI 主程序：
+构建 CLI 主程序和 Code Mode host：
 
 ```bash
-cargo build -p codex-cli --bin codex
+cargo build -p codex-cli --bin codex \
+  -p codex-code-mode-host --bin codex-code-mode-host
 ```
 
 编译产物位于：
 
 ```bash
 ./target/debug/codex
+./target/debug/codex-code-mode-host
 ```
 
 验证开发版可以启动：
@@ -88,9 +90,44 @@ cargo build -p codex-cli --bin codex
 ```bash
 ./target/debug/codex --version
 ./target/debug/codex --help
+./target/debug/codex-code-mode-host --help
 ```
 
 首次构建会下载并编译较多 Rust 依赖，因此耗时和磁盘占用都可能明显增加；后续增量构建通常会快得多。
+
+### Code Mode host 缺失
+
+不要只执行 `cargo build -p codex-cli --bin codex`。该命令只会生成 CLI，不会生成与 CLI 同目录的 `codex-code-mode-host`。如果启用了 Code Mode，首次执行相关任务时会出现类似错误：
+
+```text
+Code Mode is unavailable because failed to spawn code-mode host ...
+codex-code-mode-host: host executable was not found
+```
+
+按本节开头的“构建 CLI 主程序和 Code Mode host”命令重新编译即可。确认下面两个文件都存在后，再启动 `./target/debug/codex`：
+
+```bash
+ls -lh ./target/debug/codex ./target/debug/codex-code-mode-host
+```
+
+在 macOS 上，`codex-code-mode-host` 会依赖 V8。若下载 V8 预编译库失败（例如 HTTP 404），先安装完整 Xcode，并让系统选择它：
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license accept
+brew install llvm
+```
+
+然后使用源码构建 V8 与 host：
+
+```bash
+V8_FROM_SOURCE=1 PYTHON=/usr/bin/python3 \
+LIBCLANG_PATH="$(brew --prefix llvm)/lib" \
+cargo build -p codex-cli --bin codex \
+  -p codex-code-mode-host --bin codex-code-mode-host
+```
+
+这一步会编译 V8，首次执行可能需要 30 分钟或更久，并占用数 GB 磁盘空间。`LIBCLANG_PATH` 必须指向 Homebrew LLVM 的 `lib` 目录；否则 bindgen 可能会误用 Xcode 自带的旧版 libclang，并报出 libc++ 模板或 `__builtin_popcountg` 相关错误。
 
 ## 3. 运行开发版
 
