@@ -4759,12 +4759,12 @@ impl ChatComposer {
                 width: composer_rect.width.saturating_sub(1),
                 height: 1,
             };
-            let title = Line::from(vec!["Session: ".dim(), thread_name.to_string().dim()]);
+            let title = Line::from(thread_name.to_string().light_red().bold());
             Paragraph::new(truncate_line_with_ellipsis_if_overflow(
                 title,
                 title_area.width.into(),
             ))
-            .alignment(Alignment::Right)
+            .alignment(Alignment::Left)
             .render(title_area, buf);
         }
         if !remote_images_rect.is_empty() {
