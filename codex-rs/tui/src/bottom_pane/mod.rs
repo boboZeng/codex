@@ -474,6 +474,12 @@ impl BottomPane {
         self.request_redraw();
     }
 
+    pub(crate) fn set_thread_name(&mut self, thread_name: Option<String>) {
+        if self.composer.set_thread_name(thread_name) {
+            self.request_redraw();
+        }
+    }
+
     pub(crate) fn set_placeholder_text(&mut self, placeholder: String) {
         self.composer.set_placeholder_text(placeholder);
         self.request_redraw();
