@@ -227,12 +227,38 @@ fn responses_lite_groups_default_function_and_custom_tools() {
 }
 
 #[test]
-fn responses_lite_preserves_empty_functions_namespace_description() {
+fn responses_lite_adds_default_functions_namespace_description() {
     let tools = create_tools_json_for_responses_lite(&[ToolSpec::Function(
         responses_lite_function("lookup_order"),
     )])
     .expect("serialize Responses Lite tools");
-    assert_eq!(tools[0]["description"], "");
+    assert_eq!(tools[0]["description"], "Tools in the functions namespace.");
+}
+
+#[test]
+fn empty_namespace_description_uses_default() {
+    let specs = vec![ToolSpec::Namespace(ResponsesApiNamespace {
+        name: "collaboration".to_string(),
+        description: " \t ".to_string(),
+        tools: Vec::new(),
+    })];
+
+    let expected = create_tools_json_for_responses_api(&specs).expect("serialize tools");
+    let raw = create_tools_raw_json_for_responses_api(&specs).expect("serialize raw tools");
+
+    assert_eq!(
+        expected,
+        vec![json!({
+            "type": "namespace",
+            "name": "collaboration",
+            "description": "Tools in the collaboration namespace.",
+            "tools": [],
+        })]
+    );
+    assert_eq!(
+        serde_json::from_str::<Vec<serde_json::Value>>(raw.get()).expect("parse raw tools"),
+        expected,
+    );
 }
 
 #[test]

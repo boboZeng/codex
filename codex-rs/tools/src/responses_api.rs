@@ -8,6 +8,7 @@ use codex_protocol::DEFAULT_FUNCTION_NAMESPACE;
 use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
 use serde::Deserialize;
 use serde::Serialize;
+use serde::ser::SerializeStruct;
 use serde_json::Value;
 
 const MAX_SERIALIZED_MCP_TOOL_BYTES: usize = 8_000;
@@ -54,7 +55,7 @@ pub enum LoadableToolSpec {
     Namespace(ResponsesApiNamespace),
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResponsesApiNamespace {
     pub name: String,
     pub description: String,
@@ -62,10 +63,25 @@ pub struct ResponsesApiNamespace {
 }
 
 pub fn default_namespace_description(namespace_name: &str) -> String {
-    if namespace_name == DEFAULT_FUNCTION_NAMESPACE {
-        String::new()
-    } else {
-        format!("Tools in the {namespace_name} namespace.")
+    format!("Tools in the {namespace_name} namespace.")
+}
+
+impl Serialize for ResponsesApiNamespace {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let default_description = self
+            .description
+            .trim()
+            .is_empty()
+            .then(|| default_namespace_description(&self.name));
+        let description = default_description.as_deref().unwrap_or(&self.description);
+        let mut state = serializer.serialize_struct("ResponsesApiNamespace", 3)?;
+        state.serialize_field("name", &self.name)?;
+        state.serialize_field("description", &description)?;
+        state.serialize_field("tools", &self.tools)?;
+        state.end()
     }
 }
 
