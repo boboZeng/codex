@@ -1,0 +1,45 @@
+# Start with: codex --profile model_gpt
+model = "azure/gpt-5.6-luna"
+model_provider = "gpt"
+
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+model_reasoning_effort = "high"
+use_responses_lite = false
+
+[model_providers.gpt]
+name = "gpt"
+base_url = "https://maragate.aibotplatform.com/v1"
+env_key = "ANTHROPIC_AUTH_TOKEN"
+wire_api = "responses"
+
+
+
+[mcp_servers.figma]
+command = "npx"
+args = ["-y", "figma-developer-mcp", "--stdio"]
+startup_timeout_sec = 60
+
+[mcp_servers.figma.env]
+FIGMA_API_KEY = "XXXXXXXXXXXXXXXXXXXX"
+
+[mcp_servers.jira]
+command = "/opt/homebrew/bin/node"
+args = ["/Users/shtexaizengbobo/dev/mine_ai_work/mine_mcp_server/jira-mcp-server/dist/index.js"]
+
+[mcp_servers.jira.env]
+JIRA_API_TOKEN = "XXXXXXXXXXXXXXXXXXXX"
+JIRA_BASE_URL = "XXXXXXXXXXXXXXXXXXXX"
+JIRA_EMAIL = "XXXXXXXXXXXXXXXXXXXX"
+
+[mcp_servers.zentao]
+command = "/opt/homebrew/bin/node"
+
+[projects."/Users/shtexaizengbobo/dev/ai_skills/android"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/git_transsion/network-performance-sdk"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/文档/2026P4-1晋升答辩资料"]
+trust_level = "trusted"

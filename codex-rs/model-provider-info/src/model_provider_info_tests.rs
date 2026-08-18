@@ -20,6 +20,8 @@ base_url = "http://localhost:11434/v1"
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -53,6 +55,8 @@ query_params = { api-version = "2025-04-01-preview" }
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: Some(maplit::hashmap! {
             "api-version".to_string() => "2025-04-01-preview".into(),
         }),
@@ -90,6 +94,8 @@ supports_standalone_web_search = true
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: None,
         http_headers: Some(maplit::hashmap! {
             "X-Example-Header".to_string() => "example-value".into(),
@@ -121,6 +127,47 @@ wire_api = "chat"
 
     let err = toml::from_str::<ModelProviderInfo>(provider_toml).unwrap_err();
     assert!(err.to_string().contains(CHAT_WIRE_API_REMOVED_ERROR));
+}
+
+#[test]
+fn test_deserialize_anthropic_messages_wire_api() {
+    let provider_toml = r#"
+name = "Anthropic"
+wire_api = "anthropic_messages"
+supports_prompt_caching = true
+anthropic_prompt_caching = "system_and_tools"
+        "#;
+
+    let provider =
+        toml::from_str::<ModelProviderInfo>(provider_toml).expect("deserialize provider");
+
+    assert_eq!(provider.wire_api, WireApi::AnthropicMessages);
+    assert_eq!(provider.supports_prompt_caching, Some(true));
+    assert_eq!(
+        provider.anthropic_prompt_caching(),
+        AnthropicPromptCaching::SystemAndTools
+    );
+}
+
+#[test]
+fn legacy_prompt_caching_boolean_maps_to_effective_policy() {
+    let disabled = ModelProviderInfo {
+        supports_prompt_caching: Some(false),
+        ..ModelProviderInfo::default()
+    };
+    assert_eq!(
+        disabled.anthropic_prompt_caching(),
+        AnthropicPromptCaching::Disabled
+    );
+
+    let enabled = ModelProviderInfo {
+        supports_prompt_caching: Some(true),
+        ..ModelProviderInfo::default()
+    };
+    assert_eq!(
+        enabled.anthropic_prompt_caching(),
+        AnthropicPromptCaching::RollingHistory
+    );
 }
 
 #[test]
@@ -277,6 +324,8 @@ fn test_create_amazon_bedrock_provider() {
                 auth_refresh: None,
             }),
             wire_api: WireApi::Responses,
+            supports_prompt_caching: None,
+            anthropic_prompt_caching: None,
             query_params: None,
             http_headers: Some(maplit::hashmap! {
                 AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER.to_string() =>

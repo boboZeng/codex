@@ -160,6 +160,7 @@ fn model_provider_from_proto(
     let id = provider.id;
     let wire_api = match proto::WireApi::try_from(provider.wire_api) {
         Ok(proto::WireApi::Responses) => WireApi::Responses,
+        Ok(proto::WireApi::AnthropicMessages) => WireApi::AnthropicMessages,
         Ok(proto::WireApi::Unspecified) => {
             return Err(parse_error("remote thread config omitted wire_api"));
         }
@@ -182,6 +183,8 @@ fn model_provider_from_proto(
             .transpose()?,
         aws: None,
         wire_api,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: provider.query_params.map(redacted_string_map),
         http_headers: provider.http_headers.map(redacted_string_map),
         env_http_headers: provider.env_http_headers.map(|map| map.values),
@@ -210,6 +213,8 @@ fn model_provider_to_proto(
         auth,
         aws: _,
         wire_api,
+        supports_prompt_caching: _,
+        anthropic_prompt_caching: _,
         query_params,
         http_headers,
         env_http_headers,
@@ -305,6 +310,7 @@ fn proto_string_map(values: HashMap<String, RedactedString>) -> proto::StringMap
 fn proto_wire_api(wire_api: WireApi) -> proto::WireApi {
     match wire_api {
         WireApi::Responses => proto::WireApi::Responses,
+        WireApi::AnthropicMessages => proto::WireApi::AnthropicMessages,
     }
 }
 
@@ -447,6 +453,21 @@ mod tests {
     }
 
     #[test]
+    fn anthropic_messages_wire_api_is_supported_by_remote_config() {
+        let provider = proto::ModelProvider {
+            id: "anthropic".to_string(),
+            wire_api: proto::WireApi::AnthropicMessages.into(),
+            ..Default::default()
+        };
+        let (_, provider) = model_provider_from_proto(provider).expect("provider should parse");
+        assert_eq!(provider.wire_api, WireApi::AnthropicMessages);
+        assert_eq!(
+            proto_wire_api(WireApi::AnthropicMessages),
+            proto::WireApi::AnthropicMessages
+        );
+    }
+
+    #[test]
     fn model_provider_proto_defaults_standalone_web_search_to_false() {
         let expected = ModelProviderInfo {
             supports_standalone_web_search: false,
@@ -552,6 +573,8 @@ mod tests {
                 cwd: workspace_dir(),
             }),
             wire_api: WireApi::Responses,
+            supports_prompt_caching: None,
+            anthropic_prompt_caching: None,
             query_params: Some(HashMap::from([(
                 "api-version".to_string(),
                 "2026-04-16".into(),

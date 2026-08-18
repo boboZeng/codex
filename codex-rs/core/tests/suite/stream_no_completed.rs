@@ -57,6 +57,8 @@ async fn retries_on_early_close() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: None,
         http_headers: None,
         env_http_headers: None,

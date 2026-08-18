@@ -1038,7 +1038,7 @@ async fn tool_search_returns_deferred_custom_tool_and_routes_follow_up_call() ->
         vec![json!({
             "type": "namespace",
             "name": "functions",
-            "description": "",
+            "description": "Tools in the functions namespace.",
             "tools": [{
                 "type": "custom",
                 "name": "custom_echo",

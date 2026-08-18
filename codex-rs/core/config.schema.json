@@ -114,6 +114,32 @@
       },
       "type": "object"
     },
+    "AnthropicPromptCaching": {
+      "description": "Controls where Anthropic prompt-cache breakpoints are emitted.",
+      "oneOf": [
+        {
+          "description": "Do not send Anthropic `cache_control` fields.",
+          "enum": [
+            "disabled"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "Cache the system prompt and the last tool definition.",
+          "enum": [
+            "system_and_tools"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "Cache the system prompt, tools, and the previous conversation prefix.",
+          "enum": [
+            "rolling_history"
+          ],
+          "type": "string"
+        }
+      ]
+    },
     "AppConfig": {
       "additionalProperties": false,
       "description": "Config values for a single app/connector.",
@@ -2381,6 +2407,15 @@
       "additionalProperties": false,
       "description": "Serializable representation of a provider definition.",
       "properties": {
+        "anthropic_prompt_caching": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/AnthropicPromptCaching"
+            }
+          ],
+          "default": null,
+          "description": "Anthropic prompt-cache policy. This takes precedence over the legacy `supports_prompt_caching` boolean when both are present."
+        },
         "auth": {
           "allOf": [
             {
@@ -2461,6 +2496,11 @@
           "format": "uint64",
           "minimum": 0.0,
           "type": "integer"
+        },
+        "supports_prompt_caching": {
+          "default": null,
+          "description": "Whether the provider supports Anthropic prompt-cache breakpoints.\n\nThis only affects `wire_api = \"anthropic_messages\"`. When unset, prompt caching is enabled; set this to `false` for gateways that reject `cache_control`.",
+          "type": "boolean"
         },
         "supports_standalone_web_search": {
           "default": false,
@@ -6082,6 +6122,13 @@
           "description": "The Responses API exposed by OpenAI at `/v1/responses`.",
           "enum": [
             "responses"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "The Anthropic Messages API exposed at `/v1/messages`.",
+          "enum": [
+            "anthropic_messages"
           ],
           "type": "string"
         }

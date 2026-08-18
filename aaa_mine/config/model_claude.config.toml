@@ -1,0 +1,18 @@
+# Start with: codex --profile claude
+model = "anthropic/claude-sonnet-5"
+model_provider = "anthropic"
+
+[model_providers.anthropic]
+name = "anthropic"
+base_url = "https://maragate.aibotplatform.com/v1"
+# 默认已启用缓存；不要写也可以
+#supports_prompt_caching = true
+#  可选值建议：
+#       - disabled
+#       - system_and_tools
+#       - rolling_history
+anthropic_prompt_caching = "rolling_history"
+wire_api = "anthropic_messages"
+env_key = "ANTHROPIC_AUTH_TOKEN"
+env_http_headers = { "x-api-key" = "ANTHROPIC_AUTH_TOKEN" }
+http_headers = { "anthropic-version" = "2023-06-01" }

@@ -58,23 +58,39 @@ pub const AMAZON_BEDROCK_DEFAULT_BASE_URL: &str =
     "https://bedrock-mantle.us-east-1.api.aws/openai/v1";
 const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER: &str = "x-amzn-mantle-client-agent";
 const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_VALUE: &str = "codex";
-const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://github.com/openai/codex/discussions/7782";
+const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` or `wire_api = \"anthropic_messages\"` in your provider config.\nMore info: https://github.com/openai/codex/discussions/7782";
 pub const LEGACY_OLLAMA_CHAT_PROVIDER_ID: &str = "ollama-chat";
 pub const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://github.com/openai/codex/discussions/7782";
 
 /// Wire protocol that the provider speaks.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum WireApi {
     /// The Responses API exposed by OpenAI at `/v1/responses`.
     #[default]
     Responses,
+    /// The Anthropic Messages API exposed at `/v1/messages`.
+    AnthropicMessages,
+}
+
+/// Controls where Anthropic prompt-cache breakpoints are emitted.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AnthropicPromptCaching {
+    /// Do not send Anthropic `cache_control` fields.
+    Disabled,
+    /// Cache the system prompt and the last tool definition.
+    SystemAndTools,
+    /// Cache the system prompt, tools, and the previous conversation prefix.
+    #[default]
+    RollingHistory,
 }
 
 impl fmt::Display for WireApi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = match self {
             Self::Responses => "responses",
+            Self::AnthropicMessages => "anthropic_messages",
         };
         f.write_str(value)
     }
@@ -88,8 +104,12 @@ impl<'de> Deserialize<'de> for WireApi {
         let value = String::deserialize(deserializer)?;
         match value.as_str() {
             "responses" => Ok(Self::Responses),
+            "anthropic_messages" => Ok(Self::AnthropicMessages),
             "chat" => Err(serde::de::Error::custom(CHAT_WIRE_API_REMOVED_ERROR)),
-            _ => Err(serde::de::Error::unknown_variant(&value, &["responses"])),
+            _ => Err(serde::de::Error::unknown_variant(
+                &value,
+                &["responses", "anthropic_messages"],
+            )),
         }
     }
 }
@@ -120,6 +140,17 @@ pub struct ModelProviderInfo {
     /// Which wire protocol this provider expects.
     #[serde(default)]
     pub wire_api: WireApi,
+    /// Whether the provider supports Anthropic prompt-cache breakpoints.
+    ///
+    /// This only affects `wire_api = "anthropic_messages"`. When unset, prompt
+    /// caching is enabled; set this to `false` for gateways that reject
+    /// `cache_control`.
+    #[serde(default)]
+    pub supports_prompt_caching: Option<bool>,
+    /// Anthropic prompt-cache policy. This takes precedence over the legacy
+    /// `supports_prompt_caching` boolean when both are present.
+    #[serde(default)]
+    pub anthropic_prompt_caching: Option<AnthropicPromptCaching>,
     /// Optional query parameters to append to the base URL.
     pub query_params: Option<HashMap<String, RedactedString>>,
     /// Additional HTTP headers to include in requests to this provider where
@@ -223,6 +254,18 @@ fn default_aws_auth_refresh_timeout_ms() -> NonZeroU64 {
 }
 
 impl ModelProviderInfo {
+    /// Returns the effective Anthropic prompt-cache policy, including the
+    /// compatibility mapping for the legacy boolean setting.
+    pub fn anthropic_prompt_caching(&self) -> AnthropicPromptCaching {
+        self.anthropic_prompt_caching.unwrap_or_else(|| {
+            if self.supports_prompt_caching == Some(false) {
+                AnthropicPromptCaching::Disabled
+            } else {
+                AnthropicPromptCaching::RollingHistory
+            }
+        })
+    }
+
     /// Checks that a configured Bedrock entry only customizes supported fields.
     /// Call this on the override before merging it with the built-in provider.
     pub fn validate_bedrock_override(&self) -> Result<(), String> {
@@ -470,6 +513,8 @@ other non-default provider fields are not supported"
             auth: None,
             aws: None,
             wire_api: WireApi::Responses,
+            supports_prompt_caching: None,
+            anthropic_prompt_caching: None,
             query_params: None,
             http_headers: Some(
                 [("version".to_string(), env!("CARGO_PKG_VERSION").into())]
@@ -518,6 +563,8 @@ other non-default provider fields are not supported"
                 auth_refresh: None,
             })),
             wire_api: WireApi::Responses,
+            supports_prompt_caching: None,
+            anthropic_prompt_caching: None,
             query_params: None,
             http_headers: Some(HashMap::from([(
                 AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER.to_string(),
@@ -692,6 +739,8 @@ pub fn create_oss_provider_with_base_url(base_url: &str, wire_api: WireApi) -> M
         auth: None,
         aws: None,
         wire_api,
+        supports_prompt_caching: None,
+        anthropic_prompt_caching: None,
         query_params: None,
         http_headers: None,
         env_http_headers: None,

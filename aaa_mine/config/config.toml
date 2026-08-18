@@ -1,0 +1,81 @@
+model = "azure/gpt-5.6-terra"
+model_provider = "maragate"
+# model = "anthropic/claude-sonnet-5"
+# model_provider = "claude_gateway"
+model_reasoning_effort = "high"
+use_responses_lite = false
+
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[model_providers.maragate]
+name = "Maragate Anthropic"
+base_url = "https://maragate.aibotplatform.com/v1"
+env_key = "ANTHROPIC_AUTH_TOKEN"
+wire_api = "responses"
+
+# [model_providers.claude_gateway]
+# name = "Claude gateway"
+# base_url = "https://maragate.aibotplatform.com/v1"
+# wire_api = "anthropic_messages"
+# # env_http_headers = { "x-api-key" = "ANTHROPIC_AUTH_TOKEN" }
+# env_key = "ANTHROPIC_AUTH_TOKEN"
+# # http_headers = { "anthropic-version" = "2023-06-01" }
+
+[projects."/Users/shtexaizengbobo/dev/git_transsion/hitranslate"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/git_transsion/fix/hitranslate"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/git_mt/MasterOfLanguage"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/ai_agent/codex"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/github/android/platform-samples"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/.agents"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo"]
+trust_level = "trusted"
+
+[projects."/Users/shtexaizengbobo/dev/git_transsion/adtool"]
+trust_level = "trusted"
+
+[mcp_servers.figma]
+command = "npx"
+args = ["-y", "figma-developer-mcp", "--stdio"]
+startup_timeout_sec = 60
+
+[mcp_servers.figma.env]
+FIGMA_API_KEY = "XXXXXX"
+
+[mcp_servers.jira]
+command = "/opt/homebrew/bin/node"
+args = ["/Users/shtexaizengbobo/dev/mine_ai_work/mine_mcp_server/jira-mcp-server/dist/index.js"]
+
+[mcp_servers.jira.env]
+JIRA_API_TOKEN = "XXXXXX"
+JIRA_BASE_URL = "XXXXXX"
+JIRA_EMAIL = "XXXXXX"
+
+[mcp_servers.zentao]
+command = "/opt/homebrew/bin/node"
+args = ["/Users/shtexaizengbobo/dev/git_transsion/mcp_server/zentao-mcp-server/dist/index.js"]
+
+[mcp_servers.zentao.env]
+ZENTAO_ACCOUNT = "XXXXXX"
+ZENTAO_PASSWORD = "XXXXXX"
+ZENTAO_URL = "http://zentao.translasion.com/zentao"
+
+[mcp_servers.firebase]
+command = "npx"
+args = ["-y", "firebase-tools@latest", "mcp"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+"gpt-5.6-sol" = 4

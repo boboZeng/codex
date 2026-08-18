@@ -74,6 +74,10 @@ cd /Users/shtexaizengbobo/dev/ai_agent/codex/codex-rs
 构建 CLI 主程序和 Code Mode host：
 
 ```bash
+cargo clean
+
+cargo build -p codex-cli --bin codex -p codex-code-mode-host --bin codex-code-mode-host
+
 cargo build -p codex-cli --bin codex \
   -p codex-code-mode-host --bin codex-code-mode-host
 ```
@@ -262,6 +266,7 @@ codex-dev exec --help
 每次修改 Rust 源码后，在 `codex-rs` 目录执行：
 
 ```bash
+cargo clean
 cargo build -p codex-cli --bin codex
 ```
 

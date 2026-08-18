@@ -58,6 +58,7 @@ pub enum RemoteCompactionSupport {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProviderCapabilities {
     pub namespace_tools: bool,
+    pub tool_search: bool,
     pub image_generation: bool,
     pub web_search: bool,
     pub external_web_access: bool,
@@ -68,6 +69,7 @@ impl Default for ProviderCapabilities {
     fn default() -> Self {
         Self {
             namespace_tools: true,
+            tool_search: true,
             image_generation: true,
             web_search: true,
             external_web_access: true,
@@ -359,6 +361,17 @@ impl ModelProvider for ConfiguredModelProvider {
             RemoteCompactionSupport::Unsupported
         };
 
+        if self.info.wire_api == codex_model_provider_info::WireApi::AnthropicMessages {
+            return ProviderCapabilities {
+                tool_search: false,
+                image_generation: false,
+                web_search: false,
+                external_web_access: false,
+                remote_compaction: RemoteCompactionSupport::Unsupported,
+                ..ProviderCapabilities::default()
+            };
+        }
+
         ProviderCapabilities {
             remote_compaction,
             ..ProviderCapabilities::default()
@@ -580,6 +593,8 @@ mod tests {
             auth: None,
             aws: None,
             wire_api: WireApi::Responses,
+            supports_prompt_caching: None,
+            anthropic_prompt_caching: None,
             query_params: None,
             http_headers: None,
             env_http_headers: None,
@@ -655,6 +670,29 @@ mod tests {
             ProviderCapabilities {
                 remote_compaction: RemoteCompactionSupport::V2,
                 ..ProviderCapabilities::default()
+            }
+        );
+    }
+
+    #[test]
+    fn anthropic_messages_provider_disables_responses_only_capabilities() {
+        let provider = create_model_provider(
+            ModelProviderInfo {
+                wire_api: WireApi::AnthropicMessages,
+                ..provider_for("https://example.test/v1".to_string())
+            },
+            /*auth_manager*/ None,
+        );
+
+        assert_eq!(
+            provider.capabilities(),
+            ProviderCapabilities {
+                namespace_tools: true,
+                tool_search: false,
+                image_generation: false,
+                web_search: false,
+                external_web_access: false,
+                remote_compaction: RemoteCompactionSupport::Unsupported,
             }
         );
     }
