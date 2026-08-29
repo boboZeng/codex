@@ -1204,6 +1204,7 @@ impl BottomPane {
     }
 
     /// Replace the newest matching selection view without disturbing views stacked above it.
+    /// Preserve pending parent cleanup when an already-open child is accepted.
     pub(crate) fn replace_selection_view_if_present(
         &mut self,
         view_id: &'static str,
@@ -1219,11 +1220,13 @@ impl BottomPane {
 
         let replaces_active_view = index + 1 == self.view_stack.len();
         self.apply_standard_popup_hint(&mut params);
-        self.view_stack[index] = Box::new(list_selection_view::ListSelectionView::new(
+        let mut view = list_selection_view::ListSelectionView::new(
             params,
             self.app_event_tx.clone(),
             self.keymap.list.clone(),
-        ));
+        );
+        view.dismiss_after_child_accept = self.view_stack[index].dismiss_after_child_accept();
+        self.view_stack[index] = Box::new(view);
         if replaces_active_view {
             self.schedule_active_view_frame();
         }
