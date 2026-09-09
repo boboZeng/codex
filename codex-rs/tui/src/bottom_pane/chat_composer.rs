@@ -4,7 +4,7 @@
 //! completed slash commands to atomic elements, and handles Enter submission/newlines.
 //! It also shows Luna Reserve's yellow prompt arrow and detects unbracketed paste bursts
 //! from raw key streams, particularly on Windows.
-//! The live voice strip renders after decorative effects so its controls stay legible.
+//! The live voice strip renders after effort ignition and before stars, which skip its text.
 //!
 //! The plain-text preset keeps command prefixes literal, including `!`, so Enter and Tab
 //! submit ordinary text without enabling shell mode.
@@ -5085,6 +5085,7 @@ impl ChatComposer {
             }
         }
         drop(state);
+        self.render_voice_strip(composer_rect, buf);
         if self.astra_sparkle.is_some() {
             self.render_sparkle(
                 composer_rect,
@@ -5092,7 +5093,6 @@ impl ChatComposer {
                 buf,
             );
         }
-        self.render_voice_strip(composer_rect, buf);
     }
 }
 
