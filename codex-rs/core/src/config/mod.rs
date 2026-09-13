@@ -3329,7 +3329,7 @@ impl Config {
             match WindowsSandboxLevel::from_features(&features) {
                 WindowsSandboxLevel::Elevated => Some(WindowsSandboxModeToml::Elevated),
                 WindowsSandboxLevel::RestrictedToken => Some(WindowsSandboxModeToml::Unelevated),
-                WindowsSandboxLevel::Disabled => None,
+                WindowsSandboxLevel::Disabled | WindowsSandboxLevel::Mxc => None,
             }
         });
         apply_requirement_constrained_value(
