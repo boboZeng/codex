@@ -414,7 +414,11 @@ pub use unified_exec::spawn_windows_sandbox_session_for_level;
 #[cfg(target_os = "windows")]
 pub use unified_exec::spawn_windows_sandbox_session_legacy;
 #[cfg(target_os = "windows")]
+pub use uninstall_windows::PreparedWindowsSandboxCleanup;
+#[cfg(target_os = "windows")]
 pub use uninstall_windows::clean_up_packaged_windows_sandbox;
+#[cfg(target_os = "windows")]
+pub use uninstall_windows::prepare_packaged_windows_sandbox_cleanup;
 #[cfg(target_os = "windows")]
 pub use wfp::install_wfp_filters_for_account;
 #[cfg(target_os = "windows")]
